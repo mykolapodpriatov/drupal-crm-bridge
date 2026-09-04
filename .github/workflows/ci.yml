@@ -1,0 +1,192 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  static-analysis:
+    name: Static analysis (Drupal ${{ matrix.drupal }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3']
+        drupal: ['^10.3', '^11']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          path: crm_bridge
+
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: gd, pdo_mysql, dom, xml, mbstring, intl, curl, opcache, zip
+          tools: composer:v2
+          coverage: none
+          ini-values: memory_limit=-1
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-php${{ matrix.php }}-drupal${{ matrix.drupal }}-${{ hashFiles('crm_bridge/composer.json') }}
+          restore-keys: |
+            composer-${{ runner.os }}-php${{ matrix.php }}-drupal${{ matrix.drupal }}-
+            composer-${{ runner.os }}-php${{ matrix.php }}-
+
+      - name: Build Drupal scaffold project
+        env:
+          DRUPAL_CONSTRAINT: ${{ matrix.drupal }}
+        run: |
+          composer create-project --no-install --no-interaction \
+            "drupal/recommended-project:${DRUPAL_CONSTRAINT}" drupal
+          cd drupal
+          composer config minimum-stability dev
+          composer config prefer-stable true
+          composer config repositories.crm_bridge path ../crm_bridge
+          # phpstan/extension-installer auto-registers phpstan-drupal,
+          # phpstan-phpunit and the deprecation rules, which is why
+          # phpstan.neon must not include them by hand. Allow the plugin.
+          composer config --no-plugins allow-plugins.phpstan/extension-installer true
+          composer require --no-update "mykolapodpriatov/crm_bridge:*"
+          # drupal/core-dev supplies the Drupal test base classes and PHPUnit.
+          # With phpstan-phpunit that lets PHPStan resolve assertions and mocks
+          # in the analysed tests/ directory.
+          composer require --dev --no-update \
+            "drupal/core-dev:${DRUPAL_CONSTRAINT}" \
+            drupal/coder:^8.3 \
+            mglaman/phpstan-drupal:^1.2 \
+            phpstan/extension-installer:^1.4 \
+            phpstan/phpstan:^1.10 \
+            phpstan/phpstan-deprecation-rules:^1.1 \
+            phpstan/phpstan-phpunit:^1.3
+          composer update --no-interaction --no-progress --prefer-dist
+
+      - name: Run PHPCS (Drupal and DrupalPractice)
+        run: |
+          cd drupal
+          vendor/bin/phpcs --standard=../crm_bridge/phpcs.xml.dist \
+            ../crm_bridge/src \
+            ../crm_bridge/tests
+
+      - name: Run PHPStan (level 8)
+        run: |
+          cd drupal
+          # phpstan.neon resolves paths relative to the module root, which
+          # assumes the DDEV layout where dependencies sit beside it. In CI
+          # they live in the scaffold's vendor dir, so expose them via a
+          # symlink. `drupal_root: web` is CWD-relative and already correct.
+          ln -sfn "$(pwd)/vendor" ../crm_bridge/vendor
+          vendor/bin/phpstan analyse \
+            --configuration=../crm_bridge/phpstan.neon \
+            --memory-limit=1G \
+            --no-progress
+
+  tests:
+    name: PHPUnit (Drupal ${{ matrix.drupal }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3']
+        drupal: ['^10.3', '^11']
+
+    services:
+      mysql:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: drupal
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          path: crm_bridge
+
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: gd, pdo_mysql, dom, xml, mbstring, intl, curl, opcache, zip
+          tools: composer:v2
+          coverage: none
+          ini-values: memory_limit=-1
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-tests-${{ runner.os }}-php${{ matrix.php }}-drupal${{ matrix.drupal }}-${{ hashFiles('crm_bridge/composer.json') }}
+          restore-keys: |
+            composer-tests-${{ runner.os }}-php${{ matrix.php }}-drupal${{ matrix.drupal }}-
+
+      - name: Build Drupal site for tests
+        env:
+          DRUPAL_CONSTRAINT: ${{ matrix.drupal }}
+        run: |
+          composer create-project --no-install --no-interaction \
+            "drupal/recommended-project:${DRUPAL_CONSTRAINT}" drupal
+          cd drupal
+          composer config minimum-stability dev
+          composer config prefer-stable true
+          composer config repositories.crm_bridge path ../crm_bridge
+          composer require --no-update "mykolapodpriatov/crm_bridge:*"
+          # A bare phpunit install leaves the Mink classes missing and Drupal's
+          # test bootstrap fails before a single test runs. core-dev brings the
+          # whole stack.
+          composer require --dev --no-update \
+            "drupal/core-dev:${DRUPAL_CONSTRAINT}"
+          composer update --no-interaction --no-progress --prefer-dist
+          mkdir -p web/sites/simpletest/browser_output
+
+      - name: Wait for MariaDB
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -proot --silent; then
+              echo "MariaDB ready" && exit 0
+            fi
+            sleep 2
+          done
+          echo "MariaDB did not become ready" && exit 1
+
+      - name: Run unit tests
+        env:
+          SIMPLETEST_DB: "mysql://root:root@127.0.0.1:3306/drupal"
+          SIMPLETEST_BASE_URL: "http://localhost"
+          BROWSERTEST_OUTPUT_DIRECTORY: "/tmp"
+          SYMFONY_DEPRECATIONS_HELPER: "weak"
+        run: |
+          # Run from web/core against core's own PHPUnit config so the
+          # bootstrap and extension discovery resolve. The path repository
+          # installs the module into web/modules/contrib/crm_bridge.
+          module_tests="$GITHUB_WORKSPACE/drupal/web/modules/contrib/crm_bridge/tests"
+          cd drupal/web/core
+          ../../vendor/bin/phpunit \
+            --configuration phpunit.xml.dist \
+            --colors=always \
+            "$module_tests/src/Unit"

@@ -1,0 +1,8 @@
+name: 'CRM Bridge'
+type: module
+description: 'Queue-backed bidirectional sync between Drupal entities and a CRM: idempotent writes, origin tagging, signed webhooks, conflict policies and a Drush drift audit.'
+package: 'Web services'
+core_version_requirement: ^10.3 || ^11
+dependencies:
+  - drupal:system
+  - drupal:user
