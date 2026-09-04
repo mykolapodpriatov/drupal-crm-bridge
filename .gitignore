@@ -1,0 +1,25 @@
+# Composer
+/vendor/
+composer.lock
+
+# Drupal test scaffolding
+/web/
+/sites/
+.phpunit.result.cache
+/build/
+/reports/
+
+# Tooling caches
+.phpcs-cache
+.phpstan-cache
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+*.log
