@@ -198,16 +198,23 @@ class LinkStorage {
    *   The links.
    */
   public function findStale(string $mapping, int $before, int $limit = 50): array {
-    $rows = $this->database->select(self::TABLE, 'l')
+    $statement = $this->database->select(self::TABLE, 'l')
       ->fields('l')
       ->condition('mapping', $mapping)
       ->condition('synced', $before, '<')
       ->orderBy('synced')
       ->range(0, $limit)
-      ->execute()
-      ?->fetchAllAssoc('id', \PDO::FETCH_ASSOC) ?? [];
+      ->execute();
 
-    return array_values(array_map($this->hydrate(...), $rows));
+    // fetchAssoc() in a loop rather than fetchAll() with a mode constant.
+    // Drupal 11 replaced the PDO fetch-mode integers with a FetchAs enum that
+    // does not exist in 10.3, so passing a mode at all would work on exactly
+    // one half of the supported range.
+    $out = [];
+    while (is_array($row = $statement?->fetchAssoc())) {
+      $out[] = $this->hydrate($row);
+    }
+    return $out;
   }
 
   /**

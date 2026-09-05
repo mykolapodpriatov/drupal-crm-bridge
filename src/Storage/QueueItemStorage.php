@@ -118,8 +118,16 @@ class QueueItemStorage {
       $query->condition('mapping', $mapping);
     }
 
-    $rows = $query->execute()?->fetchAll(\PDO::FETCH_ASSOC) ?? [];
-    return array_values(array_map($this->hydrate(...), $rows));
+    // fetchAssoc() in a loop rather than fetchAll() with a mode constant.
+    // Drupal 11 replaced the PDO fetch-mode integers with a FetchAs enum that
+    // does not exist in 10.3, so passing a mode at all would work on exactly
+    // one half of the supported range.
+    $statement = $query->execute();
+    $out = [];
+    while (is_array($row = $statement?->fetchAssoc())) {
+      $out[] = $this->hydrate($row);
+    }
+    return $out;
   }
 
   /**
