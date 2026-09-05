@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<ruleset name="crm_bridge">
+  <description>PHP_CodeSniffer configuration for the CRM Bridge module.</description>
+
+  <file>src</file>
+  <file>tests</file>
+
+  <arg name="extensions" value="php,module,install,inc,test,profile,theme"/>
+  <arg name="colors"/>
+  <arg value="sp"/>
+
+  <rule ref="Drupal"/>
+  <rule ref="DrupalPractice"/>
+
+  <!-- Tests can use longer line lengths for fixture data. -->
+  <rule ref="Drupal.Files.LineLength.TooLong">
+    <exclude-pattern>tests/*</exclude-pattern>
+  </rule>
+</ruleset>

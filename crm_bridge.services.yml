@@ -1,0 +1,4 @@
+services:
+  crm_bridge.snapshot_hasher:
+    class: Drupal\crm_bridge\Service\SnapshotHasher
+  Drupal\crm_bridge\Service\SnapshotHasherInterface: '@crm_bridge.snapshot_hasher'

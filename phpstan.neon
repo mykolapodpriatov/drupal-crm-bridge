@@ -1,0 +1,17 @@
+parameters:
+  level: 8
+  paths:
+    - src
+    - tests
+  excludePaths:
+    - vendor
+  drupal:
+    drupal_root: web
+  reportUnmatchedIgnoredErrors: false
+
+# PHPStan extensions (phpstan-drupal, phpstan-phpunit,
+# phpstan-deprecation-rules) are registered automatically by
+# phpstan/extension-installer, declared in this module's require-dev. Do not
+# also `include:` their extension.neon/rules.neon here: doing so registers
+# phpstan-drupal's ServiceMap service twice and PHPStan aborts with
+# "Multiple services of type ... ServiceMap found".
