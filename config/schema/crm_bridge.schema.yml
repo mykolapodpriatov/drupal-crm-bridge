@@ -1,0 +1,73 @@
+crm_bridge.mapping.*:
+  type: config_entity
+  label: 'CRM mapping'
+  mapping:
+    id:
+      type: machine_name
+      label: 'Machine name'
+    label:
+      type: label
+      label: 'Label'
+    entity_type:
+      type: string
+      label: 'Drupal entity type'
+    bundle:
+      type: string
+      label: 'Bundle'
+    connector:
+      type: string
+      label: 'Connector plugin'
+    remote_object:
+      type: string
+      label: 'Remote object'
+    direction:
+      type: string
+      label: 'Sync direction'
+    identity:
+      type: mapping
+      label: 'Identity resolution'
+      mapping:
+        strategy:
+          type: string
+          label: 'Strategy'
+        keys:
+          type: sequence
+          label: 'Deterministic keys'
+          sequence:
+            type: string
+            label: 'Drupal field name'
+        on_ambiguous:
+          type: string
+          label: 'When a match is ambiguous'
+    conflict:
+      type: mapping
+      label: 'Conflict resolution'
+      mapping:
+        default:
+          type: string
+          label: 'Default policy'
+        per_field:
+          type: sequence
+          label: 'Per-field policies'
+          sequence:
+            type: string
+            label: 'Policy'
+    fields:
+      type: sequence
+      label: 'Field mappings'
+      sequence:
+        type: mapping
+        label: 'Field mapping'
+        mapping:
+          drupal:
+            type: string
+            label: 'Drupal field'
+          remote:
+            type: string
+            label: 'Remote field'
+          transform:
+            type: string
+            label: 'Transform'
+          direction:
+            type: string
+            label: 'Direction override'

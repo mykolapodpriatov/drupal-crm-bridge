@@ -1,0 +1,8 @@
+administer crm bridge:
+  title: 'Administer CRM Bridge'
+  description: 'Create and edit mappings and connector credentials. This grants control over what is written into the connected CRM.'
+  restrict access: true
+
+view crm bridge reports:
+  title: 'View CRM Bridge reports'
+  description: 'View sync status, the dead-letter queue and the review queue, without being able to change any configuration.'

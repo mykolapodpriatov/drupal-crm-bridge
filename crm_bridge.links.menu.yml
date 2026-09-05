@@ -1,0 +1,6 @@
+crm_bridge.admin:
+  title: 'CRM Bridge'
+  description: 'Sync Drupal entities with a CRM.'
+  parent: system.admin_config_services
+  route_name: entity.crm_bridge_mapping.collection
+  weight: 10
