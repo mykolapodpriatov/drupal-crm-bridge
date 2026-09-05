@@ -1,0 +1,243 @@
+<?php
+
+/**
+ * @file
+ * Install, update and schema hooks for CRM Bridge.
+ */
+
+declare(strict_types=1);
+
+/**
+ * Implements hook_schema().
+ *
+ * Five tables, all of them boring, all of them load-bearing.
+ *
+ * crm_bridge_link is the only irreplaceable data this module owns. Watermarks,
+ * queues and the origin log can all be rebuilt by resyncing. Losing link rows
+ * means every record is created a second time, so its columns and indexes are
+ * the ones worth arguing about, and any change to them ships with a
+ * hook_update_N from the first release onwards.
+ */
+function crm_bridge_schema(): array {
+  $schema['crm_bridge_link'] = [
+    'description' => 'Binds a Drupal entity to its counterpart in a CRM, with the state both sides were in at the last successful sync.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary key.',
+      ],
+      'mapping' => [
+        'type' => 'varchar_ascii',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => 'The crm_bridge_mapping this link belongs to.',
+      ],
+      'entity_type' => [
+        'type' => 'varchar_ascii',
+        'length' => 32,
+        'not null' => TRUE,
+        'description' => 'The Drupal entity type ID.',
+      ],
+      'entity_id' => [
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'description' => 'The Drupal entity ID, stored as a string so that entity types with non-integer IDs work.',
+      ],
+      'connector' => [
+        'type' => 'varchar_ascii',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => 'The connector plugin ID.',
+      ],
+      'remote_id' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'The record identifier in the CRM.',
+      ],
+      'local_hash' => [
+        'type' => 'varchar_ascii',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Digest of the mapped Drupal fields at the last successful sync.',
+      ],
+      'remote_hash' => [
+        'type' => 'varchar_ascii',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Digest of the mapped CRM fields at the last successful sync.',
+      ],
+      'local_values' => [
+        'type' => 'blob',
+        'size' => 'normal',
+        'not null' => FALSE,
+        'description' => 'The mapped Drupal values at the last successful sync, JSON encoded. Field-level conflict resolution is a three-way merge and needs this base; a digest alone can say a record changed but never which field.',
+      ],
+      'remote_values' => [
+        'type' => 'blob',
+        'size' => 'normal',
+        'not null' => FALSE,
+        'description' => 'The mapped CRM values at the last successful sync, JSON encoded.',
+      ],
+      'synced' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'When the last successful sync happened, as a Unix timestamp.',
+      ],
+    ],
+    'primary key' => ['id'],
+    'unique keys' => [
+      // One Drupal entity has one counterpart per mapping, and one CRM record
+      // has one Drupal entity per mapping. Enforcing both at the database
+      // rather than in code is what stops a race between two queue workers
+      // from creating a duplicate that nothing later can distinguish.
+      'entity' => ['mapping', 'entity_type', 'entity_id'],
+      'remote' => ['mapping', 'connector', 'remote_id'],
+    ],
+    'indexes' => [
+      'synced' => ['mapping', 'synced'],
+    ],
+  ];
+
+  $schema['crm_bridge_origin'] = [
+    'description' => 'Writes this module made, kept briefly so the webhooks they cause can be recognised as our own.',
+    'fields' => [
+      'tag' => [
+        'type' => 'varchar_ascii',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => 'Digest of the write: the record it targeted and the payload it carried.',
+      ],
+      'mapping' => [
+        'type' => 'varchar_ascii',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => 'The mapping that made the write.',
+      ],
+      'expires' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'When this entry stops suppressing, as a Unix timestamp.',
+      ],
+    ],
+    'primary key' => ['tag'],
+    'indexes' => [
+      // The sweep is the only thing that keeps this table from growing without
+      // bound, so it gets its own index rather than a table scan on cron.
+      'expires' => ['expires'],
+    ],
+  ];
+
+  $schema['crm_bridge_delivery'] = [
+    'description' => 'Webhook delivery identifiers already processed, so a redelivery is recognised rather than applied twice.',
+    'fields' => [
+      'connector' => [
+        'type' => 'varchar_ascii',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => 'The connector plugin ID.',
+      ],
+      'delivery_id' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'The identifier the CRM gave this delivery.',
+      ],
+      'received' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'When it first arrived, as a Unix timestamp.',
+      ],
+      'expires' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'When the entry may be swept.',
+      ],
+    ],
+    // Scoped by connector: two CRMs numbering their deliveries from one would
+    // otherwise collide, and the collision would silently drop real changes.
+    'primary key' => ['connector', 'delivery_id'],
+    'indexes' => [
+      'expires' => ['expires'],
+    ],
+  ];
+
+  foreach (['crm_bridge_dlq' => 'Work that failed its attempt budget.', 'crm_bridge_review' => 'Decisions the module refused to make on its own.'] as $table => $description) {
+    $schema[$table] = [
+      'description' => $description,
+      'fields' => [
+        'id' => [
+          'type' => 'serial',
+          'not null' => TRUE,
+          'description' => 'Primary key.',
+        ],
+        'mapping' => [
+          'type' => 'varchar_ascii',
+          'length' => 64,
+          'not null' => TRUE,
+          'description' => 'The mapping the item belongs to.',
+        ],
+        'entity_type' => [
+          'type' => 'varchar_ascii',
+          'length' => 32,
+          'not null' => TRUE,
+          'default' => '',
+          'description' => 'The Drupal entity type ID, empty for an inbound item with no local counterpart yet.',
+        ],
+        'entity_id' => [
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => TRUE,
+          'default' => '',
+          'description' => 'The Drupal entity ID.',
+        ],
+        'remote_id' => [
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => '',
+          'description' => 'The CRM record identifier.',
+        ],
+        'reason' => [
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => '',
+          'description' => 'A short explanation, meant to be readable without opening the payload.',
+        ],
+        'attempts' => [
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+          'description' => 'How many attempts were spent before giving up.',
+        ],
+        'created' => [
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+          'description' => 'When the item was queued, as a Unix timestamp.',
+        ],
+        'payload' => [
+          'type' => 'blob',
+          'size' => 'big',
+          'not null' => FALSE,
+          'description' => 'Everything needed to retry or to decide, JSON encoded, so that acting on the item never requires going back to the logs.',
+        ],
+      ],
+      'primary key' => ['id'],
+      'indexes' => [
+        'mapping_created' => ['mapping', 'created'],
+      ],
+    ];
+  }
+
+  return $schema;
+}
