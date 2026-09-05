@@ -21,6 +21,10 @@ use Drupal\crm_bridge\Mapping\Transform;
  * so the form is for exploring and correcting rather than for bulk authoring,
  * and a table with no JavaScript cannot break in a way that loses somebody's
  * half-entered mapping.
+ *
+ * The form has no constructor: EntityForm already carries an entity type
+ * manager, injected by EntityTypeManager::getFormObject(), so redeclaring it
+ * would shadow the parent's property for no gain.
  */
 class MappingForm extends EntityForm {
 
