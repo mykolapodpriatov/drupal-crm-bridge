@@ -131,7 +131,7 @@ class MappingEntityTest extends KernelTestBase {
   /**
    * A push-only mapping never yields pull fields, whatever the overrides say.
    */
-  public function testAPushMappingHasNoPullFields(): void {
+  public function testPushOnlyMappingYieldsNoPullFields(): void {
     $mapping = $this->mapping([
       'direction' => Direction::PUSH,
       'fields' => [
@@ -179,7 +179,7 @@ class MappingEntityTest extends KernelTestBase {
   /**
    * A mapping with no fields would sync nothing, which is never intended.
    */
-  public function testEmptyFieldListIsAProblem(): void {
+  public function testEmptyFieldListIsReported(): void {
     $problems = $this->mapping(['fields' => []])->validateStructure();
 
     $this->assertNotEmpty($problems);
@@ -189,7 +189,7 @@ class MappingEntityTest extends KernelTestBase {
   /**
    * The same Drupal field mapped twice means one silently wins.
    */
-  public function testDuplicateFieldIsAProblem(): void {
+  public function testDuplicateFieldIsReported(): void {
     $problems = $this->mapping([
       'identity' => ['strategy' => 'deterministic', 'keys' => [], 'on_ambiguous' => 'review'],
       'conflict' => ['default' => ConflictPolicy::REVIEW, 'per_field' => []],
@@ -205,7 +205,7 @@ class MappingEntityTest extends KernelTestBase {
   /**
    * A policy for a field this mapping does not carry is a half-applied rename.
    */
-  public function testPolicyForAnUnmappedFieldIsAProblem(): void {
+  public function testPolicyForUnmappedFieldIsReported(): void {
     $problems = $this->mapping([
       'conflict' => [
         'default' => ConflictPolicy::REVIEW,
@@ -248,7 +248,7 @@ class MappingEntityTest extends KernelTestBase {
   }
 
   /**
-   * validateStructure reports everything at once, not just the first problem.
+   * Validation reports everything at once, not just the first problem.
    *
    * One pass through the form, or one run of doctor, should be enough to fix a
    * whole mapping.

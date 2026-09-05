@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\crm_bridge\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityInterface;
-use Drupal\crm_bridge\Mapping\FieldMapping;
 
 /**
  * Defines a binding between a Drupal bundle and a remote CRM object.

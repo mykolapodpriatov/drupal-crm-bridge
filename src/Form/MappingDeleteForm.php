@@ -6,6 +6,7 @@ namespace Drupal\crm_bridge\Form;
 
 use Drupal\Core\Entity\EntityConfirmFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 
 /**
@@ -16,14 +17,14 @@ class MappingDeleteForm extends EntityConfirmFormBase {
   /**
    * {@inheritdoc}
    */
-  public function getQuestion(): \Drupal\Core\StringTranslation\TranslatableMarkup {
+  public function getQuestion(): TranslatableMarkup {
     return $this->t('Delete the %label mapping?', ['%label' => $this->entity->label()]);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getDescription(): \Drupal\Core\StringTranslation\TranslatableMarkup {
+  public function getDescription(): TranslatableMarkup {
     // Worth saying plainly: the mapping is configuration and can be recreated,
     // but the link rows it produced are the only data this module owns that a
     // resync cannot rebuild.
