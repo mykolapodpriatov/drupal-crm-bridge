@@ -15,6 +15,9 @@ class MappingListBuilder extends ConfigEntityListBuilder {
 
   /**
    * {@inheritdoc}
+   *
+   * @return array<string, mixed>
+   *   The table header.
    */
   public function buildHeader(): array {
     $header['label'] = $this->t('Mapping');
@@ -28,6 +31,12 @@ class MappingListBuilder extends ConfigEntityListBuilder {
 
   /**
    * {@inheritdoc}
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The mapping to render.
+   *
+   * @return array<string, mixed>
+   *   The table row.
    */
   public function buildRow(EntityInterface $entity): array {
     assert($entity instanceof CrmBridgeMappingInterface);

@@ -50,6 +50,14 @@ class MappingForm extends EntityForm {
 
   /**
    * {@inheritdoc}
+   *
+   * @param array<string, mixed> $form
+   *   The form structure.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   *
+   * @return array<string, mixed>
+   *   The form structure.
    */
   public function form(array $form, FormStateInterface $form_state): array {
     $form = parent::form($form, $form_state);
@@ -161,8 +169,10 @@ class MappingForm extends EntityForm {
    * @param \Drupal\crm_bridge\Entity\CrmBridgeMappingInterface $mapping
    *   The mapping being edited.
    *
-   * @return array<string, mixed>
-   *   The table render array.
+   * @return array<int|string, mixed>
+   *   The table render array. Its keys are the render array's own "#" keys
+   *   plus one integer key per row, which is why it is not a string-keyed
+   *   array like the rest of the form.
    */
   private function buildFieldTable(CrmBridgeMappingInterface $mapping): array {
     $table = [
@@ -229,6 +239,11 @@ class MappingForm extends EntityForm {
 
   /**
    * {@inheritdoc}
+   *
+   * @param array<string, mixed> $form
+   *   The form structure.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
    */
   public function validateForm(array &$form, FormStateInterface $form_state): void {
     parent::validateForm($form, $form_state);
@@ -246,6 +261,13 @@ class MappingForm extends EntityForm {
 
   /**
    * {@inheritdoc}
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The mapping being built.
+   * @param array<string, mixed> $form
+   *   The form structure.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
    */
   protected function copyFormValuesToEntity(
     EntityInterface $entity,
@@ -300,6 +322,14 @@ class MappingForm extends EntityForm {
 
   /**
    * {@inheritdoc}
+   *
+   * @param array<string, mixed> $form
+   *   The form structure.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   *
+   * @return int
+   *   Either SAVED_NEW or SAVED_UPDATED.
    */
   public function save(array $form, FormStateInterface $form_state): int {
     $result = parent::save($form, $form_state);
