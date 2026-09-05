@@ -29,10 +29,6 @@ class MappingForm extends EntityForm {
    */
   private const SPARE_ROWS = 3;
 
-  // EntityForm already carries an entity type manager, injected by
-  // EntityTypeManager::getFormObject(). Redeclaring it here would shadow the
-  // parent's property for no gain, so this form has no constructor at all.
-
   /**
    * {@inheritdoc}
    *
