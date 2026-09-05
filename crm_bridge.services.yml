@@ -16,3 +16,19 @@ services:
   # without a test-only module, and it holds nothing until something seeds it.
   crm_bridge.fake_state:
     class: Drupal\crm_bridge\Connector\FakeState
+
+  crm_bridge.link_storage:
+    class: Drupal\crm_bridge\Storage\LinkStorage
+    arguments: ['@database']
+
+  crm_bridge.origin_storage:
+    class: Drupal\crm_bridge\Storage\OriginStorage
+    arguments: ['@database', '@datetime.time']
+
+  crm_bridge.delivery_storage:
+    class: Drupal\crm_bridge\Storage\DeliveryStorage
+    arguments: ['@database', '@datetime.time']
+
+  crm_bridge.queue_item_storage:
+    class: Drupal\crm_bridge\Storage\QueueItemStorage
+    arguments: ['@database', '@datetime.time']
