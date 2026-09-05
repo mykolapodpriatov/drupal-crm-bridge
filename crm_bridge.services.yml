@@ -2,3 +2,17 @@ services:
   crm_bridge.snapshot_hasher:
     class: Drupal\crm_bridge\Service\SnapshotHasher
   Drupal\crm_bridge\Service\SnapshotHasherInterface: '@crm_bridge.snapshot_hasher'
+
+  crm_bridge.credentials:
+    class: Drupal\crm_bridge\CredentialStore
+    arguments: ['@state']
+
+  plugin.manager.crm_connector:
+    class: Drupal\crm_bridge\CrmConnectorManager
+    parent: default_plugin_manager
+
+  # The in-memory CRM behind the fake connector. It is registered
+  # unconditionally so that a kernel test can reach it through the container
+  # without a test-only module, and it holds nothing until something seeds it.
+  crm_bridge.fake_state:
+    class: Drupal\crm_bridge\Connector\FakeState
