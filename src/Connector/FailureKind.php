@@ -13,44 +13,32 @@ namespace Drupal\crm_bridge\Connector;
  */
 enum FailureKind: string {
 
-  /**
-   * A network failure or a 5xx. Retry with backoff.
-   */
+  // A network failure or a 5xx. Retry with backoff.
   case Transient = 'transient';
 
-  /**
-   * The peer's quota is exhausted. Back off, then resume the same batch.
-   */
+  // The peer's quota is exhausted. Back off, then resume the same batch.
   case RateLimited = 'rate_limited';
 
-  /**
-   * A request the peer will never accept, such as a value that fails an
-   * account-level validation rule. Retrying only burns quota, so it goes
-   * straight to the dead-letter queue with the reason attached.
-   */
+  // A request the peer will never accept, such as a value that fails an
+  // account-level validation rule. Retrying only burns quota, so it goes
+  // straight to the dead-letter queue with the reason attached.
   case Permanent = 'permanent';
 
-  /**
-   * The record is gone.
-   */
+  // The record is gone.
   case NotFound = 'not_found';
 
-  /**
-   * The credentials are wrong or expired. Retrying makes it worse and it
-   * needs a person, so it is surfaced on the status report rather than
-   * buried in the queue.
-   */
+  // The credentials are wrong or expired. Retrying makes it worse and it needs
+  // a person, so it is surfaced on the status report rather than buried in the
+  // queue.
   case Auth = 'auth';
 
-  /**
-   * Something we did not classify.
-   */
+  // Something we did not classify.
   case Unknown = 'unknown';
 
   /**
    * Whether trying again could plausibly succeed.
    *
-   * Unknown is retryable on purpose: giving up on a failure we do not
+   * Unknown is retryable on purpose. Giving up on a failure we do not
    * understand loses data, and retrying it costs a request.
    *
    * @return bool

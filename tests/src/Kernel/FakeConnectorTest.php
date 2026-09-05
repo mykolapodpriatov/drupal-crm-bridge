@@ -177,7 +177,7 @@ class FakeConnectorTest extends ConnectorConformanceTestBase {
    * Two different IDs would be two events, and dropping one of those would
    * drop a real change, so dedupe has to key on the ID rather than on content.
    */
-  public function testRedeliveriesShareADeliveryId(): void {
+  public function testRedeliveriesShareOneDeliveryId(): void {
     $this->state->setFaults(['duplicate_webhooks' => TRUE]);
     $this->connector()->upsert('contacts', new RemoteRecord('', ['email' => 'a@b.c']), 'k');
 
@@ -286,8 +286,10 @@ class FakeConnectorTest extends ConnectorConformanceTestBase {
   }
 
   /**
-   * A soft-deleting peer reports deletions on a poll; a hard-deleting one
-   * reports nothing, and that is correct rather than a gap.
+   * Only a soft-deleting peer can report a deletion on a poll.
+   *
+   * A hard-deleting one reports nothing, and that is correct rather than a
+   * gap: an absence there is indistinguishable from a permission change.
    */
   public function testOnlySoftDeletesAreVisibleToPolling(): void {
     $id = $this->createRecord(1);
@@ -307,7 +309,7 @@ class FakeConnectorTest extends ConnectorConformanceTestBase {
   /**
    * A peer with no webhook support neither queues nor accepts deliveries.
    */
-  public function testAConnectorWithoutWebhookSupportRefusesThem(): void {
+  public function testWebhooksAreRefusedWithoutSupport(): void {
     $this->state->setCapabilities(new ConnectorCapabilities());
     $this->connector()->upsert('contacts', new RemoteRecord('', ['email' => 'a@b.c']), 'k');
 
