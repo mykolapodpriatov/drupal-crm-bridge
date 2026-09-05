@@ -261,8 +261,8 @@ abstract class ConnectorConformanceTestBase extends KernelTestBase {
   public function testWebhookRejectsTamperedBodies(): void {
     $request = $this->signedDelivery();
     if ($request === NULL) {
+      // markTestSkipped never returns, which is what narrows $request below.
       $this->markTestSkipped('This connector does not accept webhooks.');
-      return;
     }
 
     $verified = $this->connector()->verifyWebhook($request);

@@ -72,6 +72,20 @@ class FakeConnectorTest extends ConnectorConformanceTestBase {
    * {@inheritdoc}
    */
   protected function signedDelivery(): ?Request {
+    return $this->validDelivery();
+  }
+
+  /**
+   * A correctly signed delivery.
+   *
+   * Separate from signedDelivery() only because that one is nullable by
+   * contract, for connectors without webhook support, and this fake always
+   * has one to give.
+   *
+   * @return \Symfony\Component\HttpFoundation\Request
+   *   The request.
+   */
+  private function validDelivery(): Request {
     return $this->delivery(
       ['events' => [['object' => 'contacts', 'remote_id' => 'fake-1']]],
       $this->state->now(),
@@ -203,7 +217,7 @@ class FakeConnectorTest extends ConnectorConformanceTestBase {
    * A genuine signature over a stale timestamp is a replay.
    */
   public function testStaleDeliveriesAreRejected(): void {
-    $request = $this->signedDelivery();
+    $request = $this->validDelivery();
     $this->state->advance(FakeConnector::SIGNATURE_WINDOW + 60);
 
     try {
