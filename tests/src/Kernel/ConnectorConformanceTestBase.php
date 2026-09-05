@@ -262,6 +262,7 @@ abstract class ConnectorConformanceTestBase extends KernelTestBase {
     $request = $this->signedDelivery();
     if ($request === NULL) {
       $this->markTestSkipped('This connector does not accept webhooks.');
+      return;
     }
 
     $verified = $this->connector()->verifyWebhook($request);
@@ -277,7 +278,7 @@ abstract class ConnectorConformanceTestBase extends KernelTestBase {
       $request->getContent() . ' ',
     );
     foreach ($request->headers->all() as $name => $values) {
-      $tampered->headers->set($name, $values);
+      $tampered->headers->set($name, array_map(strval(...), array_filter($values)));
     }
 
     try {

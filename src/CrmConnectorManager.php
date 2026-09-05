@@ -17,7 +17,7 @@ class CrmConnectorManager extends DefaultPluginManager {
   /**
    * Constructs the manager.
    *
-   * @param \Traversable $namespaces
+   * @param \Traversable<string, string> $namespaces
    *   Keyed by namespace, valued by directory.
    * @param \Drupal\Core\Cache\CacheBackendInterface $cache_backend
    *   The cache backend.

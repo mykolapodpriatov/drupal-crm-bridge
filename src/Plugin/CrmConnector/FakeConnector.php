@@ -29,8 +29,12 @@ use Symfony\Component\HttpFoundation\Request;
  *   label = @Translation("Fake CRM"),
  *   description = @Translation("An in-memory CRM used by the test suite. It is not useful on a real site.")
  * )
+ *
+ * Final on purpose. It is a test double, so there is no reason to subclass it,
+ * and being final is what lets create() use new static() without the promise
+ * that every subclass keeps this constructor signature.
  */
-class FakeConnector extends PluginBase implements CrmConnectorInterface, ContainerFactoryPluginInterface {
+final class FakeConnector extends PluginBase implements CrmConnectorInterface, ContainerFactoryPluginInterface {
 
   /**
    * The header carrying the signature.
