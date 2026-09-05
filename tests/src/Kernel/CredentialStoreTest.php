@@ -6,6 +6,8 @@ namespace Drupal\Tests\crm_bridge\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\crm_bridge\CredentialStore;
+use Drupal\crm_bridge\Entity\CrmBridgeMapping;
+use Drupal\crm_bridge\Mapping\Direction;
 
 /**
  * Tests that credentials stay out of configuration.
@@ -116,7 +118,25 @@ class CredentialStoreTest extends KernelTestBase {
   public function testCredentialsAreNotInConfiguration(): void {
     $this->store->set('hubspot', ['token' => 'super-secret-token']);
 
+    // Create a mapping first. Without one there is no crm_bridge
+    // configuration at all, the loop below has nothing to walk, and the test
+    // passes by having checked nothing. PHPUnit called that out as risky,
+    // which is the only reason it was noticed.
+    CrmBridgeMapping::create([
+      'id' => 'user_contact',
+      'label' => 'Users to contacts',
+      'entity_type' => 'user',
+      'connector' => 'hubspot',
+      'remote_object' => 'contacts',
+      'direction' => Direction::BIDIRECTIONAL,
+      'fields' => [
+        ['drupal' => 'mail', 'remote' => 'email', 'transform' => '', 'direction' => ''],
+      ],
+    ])->save();
+
     $names = $this->container->get('config.factory')->listAll('crm_bridge');
+    $this->assertNotEmpty($names, 'There is no crm_bridge configuration to inspect.');
+
     foreach ($names as $name) {
       $exported = print_r($this->config($name)->get(), TRUE);
       $this->assertStringNotContainsString('super-secret-token', $exported, $name);

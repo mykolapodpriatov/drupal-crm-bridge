@@ -258,7 +258,7 @@ abstract class ConnectorConformanceTestBase extends KernelTestBase {
   /**
    * A tampered body fails verification, and fails as an auth problem.
    */
-  public function testWebhookRejectsATamperedBody(): void {
+  public function testWebhookRejectsTamperedBodies(): void {
     $request = $this->signedDelivery();
     if ($request === NULL) {
       $this->markTestSkipped('This connector does not accept webhooks.');
