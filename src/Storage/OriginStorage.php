@@ -131,7 +131,7 @@ class OriginStorage {
       ->condition('expires', $this->time->getRequestTime(), '>')
       ->countQuery()
       ->execute()
-      ->fetchField();
+      ?->fetchField();
   }
 
   /**
@@ -178,7 +178,7 @@ class OriginStorage {
       ->condition('expires', $this->time->getRequestTime(), '>')
       ->countQuery()
       ->execute()
-      ->fetchField();
+      ?->fetchField();
   }
 
 }

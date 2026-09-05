@@ -95,7 +95,7 @@ class DeliveryStorage {
     return (int) $this->database->select(self::TABLE, 'd')
       ->countQuery()
       ->execute()
-      ->fetchField();
+      ?->fetchField();
   }
 
 }

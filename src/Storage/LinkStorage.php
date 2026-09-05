@@ -51,9 +51,9 @@ class LinkStorage {
       ->condition('entity_type', $entityTypeId)
       ->condition('entity_id', $entityId)
       ->execute()
-      ->fetchAssoc();
+      ?->fetchAssoc();
 
-    return $row === FALSE ? NULL : $this->hydrate($row);
+    return is_array($row) ? $this->hydrate($row) : NULL;
   }
 
   /**
@@ -76,9 +76,9 @@ class LinkStorage {
       ->condition('connector', $connector)
       ->condition('remote_id', $remoteId)
       ->execute()
-      ->fetchAssoc();
+      ?->fetchAssoc();
 
-    return $row === FALSE ? NULL : $this->hydrate($row);
+    return is_array($row) ? $this->hydrate($row) : NULL;
   }
 
   /**
@@ -178,7 +178,7 @@ class LinkStorage {
       ->condition('mapping', $mapping)
       ->countQuery()
       ->execute()
-      ->fetchField();
+      ?->fetchField();
   }
 
   /**
@@ -205,7 +205,7 @@ class LinkStorage {
       ->orderBy('synced')
       ->range(0, $limit)
       ->execute()
-      ->fetchAllAssoc('id', \PDO::FETCH_ASSOC);
+      ?->fetchAllAssoc('id', \PDO::FETCH_ASSOC) ?? [];
 
     return array_values(array_map($this->hydrate(...), $rows));
   }

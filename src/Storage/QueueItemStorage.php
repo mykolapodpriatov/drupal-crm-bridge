@@ -88,9 +88,9 @@ class QueueItemStorage {
       ->fields('q')
       ->condition('id', $id)
       ->execute()
-      ->fetchAssoc();
+      ?->fetchAssoc();
 
-    return $row === FALSE ? NULL : $this->hydrate($row);
+    return is_array($row) ? $this->hydrate($row) : NULL;
   }
 
   /**
@@ -118,7 +118,7 @@ class QueueItemStorage {
       $query->condition('mapping', $mapping);
     }
 
-    $rows = $query->execute()->fetchAll(\PDO::FETCH_ASSOC);
+    $rows = $query->execute()?->fetchAll(\PDO::FETCH_ASSOC) ?? [];
     return array_values(array_map($this->hydrate(...), $rows));
   }
 
@@ -140,7 +140,7 @@ class QueueItemStorage {
     if ($mapping !== '') {
       $query->condition('mapping', $mapping);
     }
-    return (int) $query->countQuery()->execute()->fetchField();
+    return (int) $query->countQuery()->execute()?->fetchField();
   }
 
   /**
