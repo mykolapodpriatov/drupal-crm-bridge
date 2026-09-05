@@ -1,0 +1,5 @@
+crm_bridge.mapping_add:
+  route_name: entity.crm_bridge_mapping.add_form
+  title: 'Add mapping'
+  appears_on:
+    - entity.crm_bridge_mapping.collection

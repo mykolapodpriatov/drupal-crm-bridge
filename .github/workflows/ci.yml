@@ -174,7 +174,7 @@ jobs:
           done
           echo "MariaDB did not become ready" && exit 1
 
-      - name: Run unit tests
+      - name: Run unit and kernel tests
         env:
           SIMPLETEST_DB: "mysql://root:root@127.0.0.1:3306/drupal"
           SIMPLETEST_BASE_URL: "http://localhost"
@@ -189,4 +189,5 @@ jobs:
           ../../vendor/bin/phpunit \
             --configuration phpunit.xml.dist \
             --colors=always \
-            "$module_tests/src/Unit"
+            "$module_tests/src/Unit" \
+            "$module_tests/src/Kernel"
