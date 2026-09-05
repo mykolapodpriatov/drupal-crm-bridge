@@ -169,7 +169,7 @@ class StorageTest extends KernelTestBase {
   /**
    * Deleting removes exactly one link.
    */
-  public function testDeletingALink(): void {
+  public function testDeletingOneLink(): void {
     $this->links->save($this->link('1', 'hs-1'));
     $this->links->save($this->link('2', 'hs-2'));
 
@@ -227,7 +227,7 @@ class StorageTest extends KernelTestBase {
   /**
    * A different payload for the same record is not our echo.
    */
-  public function testADifferentPayloadIsNotAnEcho(): void {
+  public function testDifferentPayloadIsNotAnEcho(): void {
     $this->origins->record(
       'user_contact',
       OriginStorage::tag('hubspot', 'contacts', 'hs-1', 'payload-a'),
