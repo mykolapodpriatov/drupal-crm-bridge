@@ -184,10 +184,20 @@ jobs:
           # Run from web/core against core's own PHPUnit config so the
           # bootstrap and extension discovery resolve. The path repository
           # installs the module into web/modules/contrib/crm_bridge.
+          #
+          # One suite per invocation, on purpose. PHPUnit 9, which is what
+          # Drupal 10.3 pins, accepts a single path argument and silently
+          # ignores any further ones: passing both directories ran the unit
+          # suite and quietly skipped the kernel suite on that half of the
+          # matrix, while PHPUnit 11 on Drupal 11 ran both. Two invocations
+          # behave identically on both.
           module_tests="$GITHUB_WORKSPACE/drupal/web/modules/contrib/crm_bridge/tests"
           cd drupal/web/core
-          ../../vendor/bin/phpunit \
-            --configuration phpunit.xml.dist \
-            --colors=always \
-            "$module_tests/src/Unit" \
-            "$module_tests/src/Kernel"
+          for suite in Unit Kernel; do
+            echo "::group::$suite tests"
+            ../../vendor/bin/phpunit \
+              --configuration phpunit.xml.dist \
+              --colors=always \
+              "$module_tests/src/$suite"
+            echo "::endgroup::"
+          done
