@@ -193,10 +193,16 @@ jobs:
           # behave identically on both.
           module_tests="$GITHUB_WORKSPACE/drupal/web/modules/contrib/crm_bridge/tests"
           cd drupal/web/core
+          # Absolute, not relative. KernelTestBase runs each test in its own
+          # process on PHPUnit 9, and the child re-reads the configuration by
+          # the same string from a different working directory, so a relative
+          # path fails there with "Could not read phpunit.xml.dist" while the
+          # parent process reads it happily.
+          config="$PWD/phpunit.xml.dist"
           for suite in Unit Kernel; do
             echo "::group::$suite tests"
             ../../vendor/bin/phpunit \
-              --configuration phpunit.xml.dist \
+              --configuration "$config" \
               --colors=always \
               "$module_tests/src/$suite"
             echo "::endgroup::"
