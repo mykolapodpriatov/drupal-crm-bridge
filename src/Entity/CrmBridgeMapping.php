@@ -245,6 +245,17 @@ class CrmBridgeMapping extends ConfigEntityBase implements CrmBridgeMappingInter
   /**
    * {@inheritdoc}
    */
+  public function getPerFieldPolicies(): array {
+    $policies = [];
+    foreach ($this->conflict['per_field'] ?? [] as $field => $policy) {
+      $policies[(string) $field] = (string) $policy;
+    }
+    return $policies;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getConflictPolicy(string $drupalField = ''): string {
     if ($drupalField !== '' && isset($this->conflict['per_field'][$drupalField])) {
       return $this->conflict['per_field'][$drupalField];

@@ -170,6 +170,20 @@ class MappingEntityTest extends KernelTestBase {
   }
 
   /**
+   * Explicit per-field policies are distinguishable from inherited ones.
+   *
+   * The form needs this: editing a mapping must not silently pin every field
+   * to whatever default happened to be in force at the time.
+   */
+  public function testPerFieldPoliciesReportOnlyExplicitOnes(): void {
+    $this->assertSame(
+      ['mail' => ConflictPolicy::DRUPAL_WINS],
+      $this->mapping()->getPerFieldPolicies(),
+    );
+    $this->assertSame([], $this->mapping(['conflict' => []])->getPerFieldPolicies());
+  }
+
+  /**
    * A well-formed mapping reports no structural problems.
    */
   public function testValidMappingIsStructurallyValid(): void {

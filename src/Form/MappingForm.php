@@ -6,13 +6,11 @@ namespace Drupal\crm_bridge\Form;
 
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\crm_bridge\Entity\CrmBridgeMappingInterface;
 use Drupal\crm_bridge\Mapping\ConflictPolicy;
 use Drupal\crm_bridge\Mapping\Direction;
 use Drupal\crm_bridge\Mapping\Transform;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Creates and edits CRM mappings.
@@ -31,22 +29,9 @@ class MappingForm extends EntityForm {
    */
   private const SPARE_ROWS = 3;
 
-  /**
-   * Constructs the form.
-   *
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
-   *   The entity type manager, used to list mappable entity types.
-   */
-  public function __construct(
-    protected readonly EntityTypeManagerInterface $entityTypeManager,
-  ) {}
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container): static {
-    return new static($container->get('entity_type.manager'));
-  }
+  // EntityForm already carries an entity type manager, injected by
+  // EntityTypeManager::getFormObject(). Redeclaring it here would shadow the
+  // parent's property for no gain, so this form has no constructor at all.
 
   /**
    * {@inheritdoc}
@@ -191,46 +176,51 @@ class MappingForm extends EntityForm {
     $rows = $mapping->getFieldMappings();
     $count = count($rows) + self::SPARE_ROWS;
 
+    $policies = $mapping->getPerFieldPolicies();
+
+    // Each row is assigned whole rather than field by field. Writing into
+    // $table[$i]['drupal'] would mean reading $table[$i] first, on an array
+    // whose inferred shape is the render array's own keys.
     for ($i = 0; $i < $count; $i++) {
       $row = $rows[$i] ?? NULL;
       $drupalField = $row?->drupalField ?? '';
 
-      $table[$i]['drupal'] = [
-        '#type' => 'textfield',
-        '#title' => $this->t('Drupal field'),
-        '#title_display' => 'invisible',
-        '#default_value' => $drupalField,
-        '#size' => 24,
-      ];
-      $table[$i]['remote'] = [
-        '#type' => 'textfield',
-        '#title' => $this->t('Remote field'),
-        '#title_display' => 'invisible',
-        '#default_value' => $row?->remoteField ?? '',
-        '#size' => 24,
-      ];
-      $table[$i]['transform'] = [
-        '#type' => 'select',
-        '#title' => $this->t('Transform'),
-        '#title_display' => 'invisible',
-        '#options' => ['' => $this->t('None')] + $this->transformOptions(),
-        '#default_value' => $row?->transform ?? '',
-      ];
-      $table[$i]['direction'] = [
-        '#type' => 'select',
-        '#title' => $this->t('Direction'),
-        '#title_display' => 'invisible',
-        '#options' => ['' => $this->t('Use mapping default')] + $this->directionOptions(),
-        '#default_value' => $row?->direction ?? '',
-      ];
-      $table[$i]['policy'] = [
-        '#type' => 'select',
-        '#title' => $this->t('Conflict policy'),
-        '#title_display' => 'invisible',
-        '#options' => ['' => $this->t('Use mapping default')] + $this->policyOptions(),
-        '#default_value' => $drupalField !== ''
-          ? ($mapping->get('conflict')['per_field'][$drupalField] ?? '')
-          : '',
+      $table[$i] = [
+        'drupal' => [
+          '#type' => 'textfield',
+          '#title' => $this->t('Drupal field'),
+          '#title_display' => 'invisible',
+          '#default_value' => $drupalField,
+          '#size' => 24,
+        ],
+        'remote' => [
+          '#type' => 'textfield',
+          '#title' => $this->t('Remote field'),
+          '#title_display' => 'invisible',
+          '#default_value' => $row?->remoteField ?? '',
+          '#size' => 24,
+        ],
+        'transform' => [
+          '#type' => 'select',
+          '#title' => $this->t('Transform'),
+          '#title_display' => 'invisible',
+          '#options' => ['' => $this->t('None')] + $this->transformOptions(),
+          '#default_value' => $row?->transform ?? '',
+        ],
+        'direction' => [
+          '#type' => 'select',
+          '#title' => $this->t('Direction'),
+          '#title_display' => 'invisible',
+          '#options' => ['' => $this->t('Use mapping default')] + $this->directionOptions(),
+          '#default_value' => $row?->direction ?? '',
+        ],
+        'policy' => [
+          '#type' => 'select',
+          '#title' => $this->t('Conflict policy'),
+          '#title_display' => 'invisible',
+          '#options' => ['' => $this->t('Use mapping default')] + $this->policyOptions(),
+          '#default_value' => $policies[$drupalField] ?? '',
+        ],
       ];
     }
 

@@ -114,6 +114,19 @@ interface CrmBridgeMappingInterface extends ConfigEntityInterface {
   public function getConflictPolicy(string $drupalField = ''): string;
 
   /**
+   * The conflict policies that were explicitly configured per field.
+   *
+   * Distinct from getConflictPolicy(), which resolves to the mapping default.
+   * The form needs to know whether a field has its own policy or is simply
+   * inheriting, so that editing a mapping does not silently pin every field
+   * to the default that happened to be in force.
+   *
+   * @return array<string, string>
+   *   Policies keyed by Drupal field name.
+   */
+  public function getPerFieldPolicies(): array;
+
+  /**
    * Lists everything wrong with this mapping.
    *
    * This is structural validation only: it needs no network access and no
