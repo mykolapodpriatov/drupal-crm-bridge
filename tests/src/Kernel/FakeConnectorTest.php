@@ -323,8 +323,8 @@ class FakeConnectorTest extends ConnectorConformanceTestBase {
   /**
    * A negative cursor is not an offset from the end.
    *
-   * array_slice() reads a negative offset that way. The cursor is a count of
-   * records already returned, so "-1" has to mean the first page.
+   * A call to array_slice() reads a negative offset that way. The cursor
+   * counts records already returned, so "-1" has to mean the first page.
    */
   public function testNegativeCursorDoesNotWrapToTheTail(): void {
     $ids = [];
