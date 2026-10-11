@@ -173,6 +173,11 @@ final class FakeConnector extends PluginBase implements CrmConnectorInterface, C
 
     $records = $this->state->records($object, $since);
     $start = $cursor === '' ? 0 : (int) $cursor;
+    // array_slice() treats a negative offset as "from the end". A cursor of
+    // "-1" would then return the last record instead of the start of the list.
+    if ($start < 0) {
+      $start = 0;
+    }
     if ($start > count($records)) {
       $start = count($records);
     }
