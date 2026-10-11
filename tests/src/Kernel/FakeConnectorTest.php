@@ -321,6 +321,27 @@ class FakeConnectorTest extends ConnectorConformanceTestBase {
   }
 
   /**
+   * A negative cursor is not an offset from the end.
+   *
+   * A call to array_slice() reads a negative offset that way. The cursor
+   * counts records already returned, so "-1" has to mean the first page.
+   */
+  public function testNegativeCursorDoesNotWrapToTheTail(): void {
+    $ids = [];
+    for ($seq = 1; $seq <= 4; $seq++) {
+      $ids[] = $this->createRecord($seq);
+    }
+
+    $page = $this->connector()->listChanged('contacts', 0, '-1');
+    $got = array_map(
+      static fn (RemoteRecord $record): string => $record->remoteId,
+      $page->records,
+    );
+
+    $this->assertSame($ids, $got);
+  }
+
+  /**
    * A peer with no webhook support neither queues nor accepts deliveries.
    */
   public function testWebhooksAreRefusedWithoutSupport(): void {
